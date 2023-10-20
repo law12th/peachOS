@@ -12,6 +12,13 @@ times 33 db 0 ; create 33 bytes after short jump (bios parameter block). In case
 start: ; a label is a name given to an address. without them a programmer would have to manually calculate them
     jmp 0x7c0:step2 ; make code segment 0x7c0
 
+handle_zero:
+    mov ah, 0eh
+    mov al, 'A'
+    mov bx, 0x00
+    int 0x10
+    iret ; return from interrupt
+
 step2:
     cli ; clear interrupts
     mov ax, 0x7c0 ; we can't directly move 0x7c0 into ds or es. we need to move it into intermediate ax register
@@ -21,6 +28,12 @@ step2:
     mov ss, ax
     mov sp, 0x7c00 ; stack pointer
     sti ; enables interrupts
+
+    mov word[ss:0x00], handle_zero ; word specifies size of data being moved
+    mov word[ss:0x02], 0x7c0 ; move 0x7c0 into 16-bit stack segment with offset 0x02
+
+    int 0
+
     mov si, message ; move message address to si register
     call print ; call print subroutine to print contents of si onto screen
     jmp $ ; don't execute signature.
